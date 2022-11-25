@@ -1,4 +1,3 @@
-from random import randrange
 import osmnx as ox
 import networkx as nx
 import plotly.graph_objects as go
@@ -32,9 +31,6 @@ def select_positions():
             new_marker = map_widget.set_marker(
                 coords[0], coords[1], text="Local")
 
-    def destroy():
-        root_tk.destroy()
-
     # create tkinter window
     root_tk = tkinter.Tk()
     root_tk.geometry(f"{800}x{600}")
@@ -50,7 +46,6 @@ def select_positions():
 
     map_widget.add_left_click_map_command(add_marker_event)
 
-    tkinter.Button(root_tk, text="Encerrar", command=destroy).pack()
     root_tk.mainloop()
 
 
@@ -165,7 +160,7 @@ def find_optimal_path():
         s = local
 
         # Finding the optimal path
-        route = route[:-1] + nx.shortest_path(
+        route = route[:-1] + nx.astar_path(
             G, origin_node, destination_node, weight='length')
     print(route)
 
