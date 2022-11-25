@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 import numpy as np
 import tkinter
 import tkintermapview
-from operator import itemgetter
 
 
 destinations = []
@@ -170,6 +169,22 @@ def get_closer_dest_to_start(G):
     return near_dest, origin_node_min_cost, dest_node_min_cost
 
 
+def make_heuristic(G):
+    def heuristic(a, b):
+        nodes = G.nodes(data=True)
+
+        # recebendo os dados dos nós
+        a_data = [item for item in nodes if item[0] == a][0]
+        b_data = [item for item in nodes if item[0] == b][0]
+
+        x1, y1 = a_data[1]['x'], a_data[1]['y']
+        (x2, y2) = b_data[1]['x'], b_data[1]['y']
+
+        return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+
+    return heuristic
+
+
 def find_optimal_path():
     """
     Procura o melhor caminho entre os pontos selecionados e o desenha no mapa
@@ -182,7 +197,7 @@ def find_optimal_path():
     near_dest, origin_node, destination_node = get_closer_dest_to_start(
         G)
     route = nx.astar_path(G, origin_node,
-                          destination_node, weight='length')  # calculando para o primeiro nó
+                          destination_node, make_heuristic(G), weight='length')  # calculando para o primeiro nó
 
     source = near_dest
     for dest in destinations:  # encontra o caminho entre cada par de pontos
@@ -194,7 +209,7 @@ def find_optimal_path():
 
         # Encontra o caminho ótimo e concatena com os anteriores
         route = route[:-1] + nx.astar_path(G, origin_node,
-                                           destination_node, weight='length')
+                                           destination_node, make_heuristic(G), weight='length')
         source = dest
 
     # # getting the list of coordinates from the path
