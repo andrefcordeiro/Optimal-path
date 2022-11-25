@@ -4,21 +4,19 @@ import plotly.graph_objects as go
 import numpy as np
 import tkinter
 import tkintermapview
+from operator import itemgetter
 
 
-locais = []
+destinations = []
 start = None
 
 
 def select_positions():
-    '''
+    """
     Função utiliza para escolher pontos no mapa a serem utilizados no caminho.
 
     O primeiro ponto selecionado é a origem e o restante são os pontos que demve ser visitados
-    '''
-
-    global root_tk
-
+    """
     def add_marker_event(coords):
         global start
 
@@ -27,7 +25,7 @@ def select_positions():
             new_marker = map_widget.set_marker(
                 coords[0], coords[1], text="Start", marker_color_outside='#48a2f7', marker_color_circle='white')
         else:
-            locais.append(coords)
+            destinations.append(coords)
             new_marker = map_widget.set_marker(
                 coords[0], coords[1], text="Local")
 
@@ -142,29 +140,65 @@ def node_list_to_path(G, node_list):
     return lines
 
 
-def find_optimal_path():
-    '''
-    Procura o melhor caminho entre os pontos selecionados e o desenha no mapa
-    '''
+def get_nearest_nodes(G, source, dest):
+    """
+    Retorna os nós mais próximos das localizações selecionadas
+    """
+    origin_node = ox.nearest_nodes(G, source[1], source[0])
+    destination_node = ox.nearest_nodes(
+        G, dest[1], dest[0])
 
+    return origin_node, destination_node
+
+
+def get_closer_dest_to_start(G):
+    """
+    Retorna o nó cujo caminho é o de menor custo à partir da origem
+    """
+    min_cost = 100000000000
+
+    for dest in destinations:
+        origin_node, destination_node = get_nearest_nodes(G, start, dest)
+
+        cost = nx.shortest_path_length(G, origin_node, destination_node)
+        if cost < min_cost:
+            min_cost = cost
+            origin_node_min_cost = origin_node
+            dest_node_min_cost = destination_node
+            near_dest = dest
+
+    return near_dest, origin_node_min_cost, dest_node_min_cost
+
+
+def find_optimal_path():
+    """
+    Procura o melhor caminho entre os pontos selecionados e o desenha no mapa
+    """
     G = ox.graph_from_point(
         (start[0], start[1]), dist=5000, dist_type='bbox', network_type='drive')
 
     route = list()
-    s = start
-    for local in locais:  # encontra o caminho entre cada par de pontos
-        # recebe os nós mais próximos das localizações selecionadas
-        origin_node = ox.nearest_nodes(G, s[1], s[0])
-        destination_node = ox.nearest_nodes(
-            G, local[1], local[0])
-        s = local
 
-        # Encontra o caminho ótimo e concatena com o anterior
-        route = route[:-1] + nx.astar_path(
-            G, origin_node, destination_node, weight='length')
+    near_dest, origin_node, destination_node = get_closer_dest_to_start(
+        G)
+    route = nx.astar_path(G, origin_node,
+                          destination_node, weight='length')  # calculando para o primeiro nó
 
-    # getting the list of coordinates from the path
-    # (which is a list of nodes)
+    source = near_dest
+    for dest in destinations:  # encontra o caminho entre cada par de pontos
+
+        if source == dest:
+            continue
+
+        origin_node, destination_node = get_nearest_nodes(G, source, dest)
+
+        # Encontra o caminho ótimo e concatena com os anteriores
+        route = route[:-1] + nx.astar_path(G, origin_node,
+                                           destination_node, weight='length')
+        source = dest
+
+    # # getting the list of coordinates from the path
+    # # (which is a list of nodes)
     lines = node_list_to_path(G, route)
     long = []
     lat = []
@@ -176,14 +210,14 @@ def find_optimal_path():
             long.append(l1[j])
             lat.append(l2[j])
 
-    plot_path(lat, long, start, locais)
+    plot_path(lat, long, start, destinations)
 
 
 select_positions()
 print(f'\n\nPonto de origem selecionado: {start}')
-print('\nLocais que devem visitados: \n')
-for l in locais:
-    print(l)
+print('\nDestinos que devem visitados: \n')
+for dest in destinations:
+    print(dest)
 print()
 
 find_optimal_path()
