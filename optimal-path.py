@@ -144,44 +144,46 @@ def node_list_to_path(G, node_list):
 
 def find_optimal_path():
     '''
-    Procura o melhor caminho entre os pontos selecionados e desenha o caminho no mapa
+    Procura o melhor caminho entre os pontos selecionados e o desenha no mapa
     '''
 
     G = ox.graph_from_point(
-        (start[0], start[1]), dist=1000, dist_type='bbox', network_type='drive')
+        (start[0], start[1]), dist=5000, dist_type='bbox', network_type='drive')
 
     route = list()
     s = start
-    for local in locais:  # encontra o caminho entre cada um dos pontos
-        # get the nearest nodes to the locations
+    for local in locais:  # encontra o caminho entre cada par de pontos
+        # recebe os nós mais próximos das localizações selecionadas
         origin_node = ox.nearest_nodes(G, s[1], s[0])
         destination_node = ox.nearest_nodes(
             G, local[1], local[0])
         s = local
 
-        # Finding the optimal path
+        # Encontra o caminho ótimo e concatena com o anterior
         route = route[:-1] + nx.astar_path(
             G, origin_node, destination_node, weight='length')
-    print(route)
 
     # getting the list of coordinates from the path
     # (which is a list of nodes)
     lines = node_list_to_path(G, route)
-    long2 = []
-    lat2 = []
+    long = []
+    lat = []
     for i in range(len(lines)):
         z = list(lines[i])
         l1 = list(list(zip(*z))[0])
         l2 = list(list(zip(*z))[1])
         for j in range(len(l1)):
-            long2.append(l1[j])
-            lat2.append(l2[j])
+            long.append(l1[j])
+            lat.append(l2[j])
 
-    plot_path(lat2, long2, start, locais)
+    plot_path(lat, long, start, locais)
 
 
 select_positions()
 print(f'\n\nPonto de origem selecionado: {start}')
-print(f'\nLocais que devem visitados: \n{locais}')
+print('\nLocais que devem visitados: \n')
+for l in locais:
+    print(l)
+print()
 
 find_optimal_path()
