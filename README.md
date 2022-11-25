@@ -14,3 +14,6 @@ pip install networkx
 ```
 pip install plotly
 ```
+```
+pip install -U scikit-learn
+```
