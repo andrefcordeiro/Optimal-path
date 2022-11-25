@@ -54,7 +54,7 @@ def select_positions():
     root_tk.mainloop()
 
 
-def plot_path(lat, long, origin_point, destination_point):
+def plot_path(lat, long, origin_point, destination_points):
     """
     Given a list of latitudes and longitudes, origin 
     and destination point, plots a path on a map
@@ -84,13 +84,15 @@ def plot_path(lat, long, origin_point, destination_point):
         lat=[origin_point[0]],
         marker={'size': 12, 'color': "red"}))
 
-    # adding destination marker
-    fig.add_trace(go.Scattermapbox(
-        name="Destination",
-        mode="markers",
-        lon=[destination_point[1]],
-        lat=[destination_point[0]],
-        marker={'size': 12, 'color': 'green'}))
+    for i in range(0, len(destination_points)):
+        dest = destination_points[i]
+        # adding destination marker
+        fig.add_trace(go.Scattermapbox(
+            name=f'Destination {i}',
+            mode="markers",
+            lon=[dest[1]],
+            lat=[dest[0]],
+            marker={'size': 12, 'color': 'green'}))
 
     # getting center for plots:
     lat_center = np.mean(lat)
@@ -152,36 +154,19 @@ def find_optimal_path():
 
     G = ox.graph_from_point(
         (start[0], start[1]), dist=1000, dist_type='bbox', network_type='drive')
-    # G = ox.graph_from_point(
-    #     (-23.31943220339117, -51.1242936321194), dist=1000, dist_type='bbox', network_type='drive')
-    # Plotting the map graph
-    # ox.plot_graph(G)
 
-    # nodes
-    # nodes = list(G.nodes(data=True))
-    # print(nodes[1], nodes[1][1]['x'])
+    route = list()
+    s = start
+    for local in locais:  # encontra o caminho entre cada um dos pontos
+        # get the nearest nodes to the locations
+        origin_node = ox.nearest_nodes(G, s[1], s[0])
+        destination_node = ox.nearest_nodes(
+            G, local[1], local[0])
+        s = local
 
-    # define origin and desination locations
-    # orig = nodes[randrange(0, len(nodes))][1]  # pegando um node aleatorio
-    # start = (orig['x'], orig['y'])
-    # print(start)
-
-    # dest = nodes[randrange(0, len(nodes))][1]  # pegando um node aleatorio
-    # destination = (dest['x'], dest['y'])
-    # print(destination)
-    destination = locais[0]  # pegando apenas o primeiro local
-
-    # get the nearest nodes to the locations
-    origin_node = ox.nearest_nodes(G, start[1], start[0])
-    destination_node = ox.nearest_nodes(
-        G, destination[1], destination[0])
-
-    # printing the closest node id to origin and destination points
-    # print(origin_node)
-    # print(destination_node)
-
-    # Finding the optimal path
-    route = nx.shortest_path(G, origin_node, destination_node, weight='length')
+        # Finding the optimal path
+        route = route[:-1] + nx.shortest_path(
+            G, origin_node, destination_node, weight='length')
     print(route)
 
     # getting the list of coordinates from the path
@@ -197,7 +182,7 @@ def find_optimal_path():
             long2.append(l1[j])
             lat2.append(l2[j])
 
-    plot_path(lat2, long2, start, destination)
+    plot_path(lat2, long2, start, locais)
 
 
 select_positions()
